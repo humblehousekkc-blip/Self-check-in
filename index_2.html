@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Humble House — Self Check-in</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F0EA;
+    --card: #FFFDFB;
+    --primary: #656843;
+    --primary-light: #ECEEE0;
+    --accent: #A95F44;
+    --accent-light: #F5EAE4;
+    --sand: #DEC2A5;
+    --sand-light: #F7F0E8;
+    --text: #2C2820;
+    --text-muted: #937F73;
+    --border: #E8DDD3;
+    --radius: 14px;
+    --shadow: 0 2px 24px rgba(101,104,67,0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sarabun', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 60px; }
+
+  .header { background: var(--primary); color: white; padding: 28px 20px 22px; text-align: center; }
+  .header-logo { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 500; letter-spacing: 1px; line-height: 1.1; margin-bottom: 4px; }
+  .header-logo span { display: block; }
+  .header-sub { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.6; }
+
+  .progress-wrap { background: var(--primary); padding: 0 20px 22px; }
+  .progress-steps { display: flex; max-width: 420px; margin: 0 auto; }
+  .step-dot { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
+  .step-dot:not(:last-child)::after { content: ''; position: absolute; top: 13px; left: 50%; width: 100%; height: 1px; background: rgba(255,255,255,0.15); z-index: 0; }
+  .step-dot.done:not(:last-child)::after { background: rgba(222,194,165,0.6); }
+  .step-num { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.35); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; background: transparent; position: relative; z-index: 1; transition: all .3s; }
+  .step-dot.active .step-num { border-color: var(--sand); background: var(--sand); color: var(--primary); }
+  .step-dot.done .step-num { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.12); color: white; }
+  .step-label { font-size: 9px; color: rgba(255,255,255,0.35); text-align: center; white-space: nowrap; letter-spacing: 0.5px; }
+  .step-dot.active .step-label { color: var(--sand); }
+  .step-dot.done .step-label { color: rgba(255,255,255,0.6); }
+
+  .container { max-width: 480px; margin: 0 auto; padding: 24px 16px 0; }
+  .card { background: var(--card); border-radius: var(--radius); padding: 28px 24px; box-shadow: var(--shadow); margin-bottom: 16px; border: 1px solid var(--border); }
+  .card-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 500; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; color: var(--text); }
+  .step-badge { width: 26px; height: 26px; border-radius: 50%; background: var(--primary-light); color: var(--primary); font-size: 11px; font-weight: 600; font-family: 'Sarabun', sans-serif; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .card-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.7; }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase; }
+  .field input { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; font-family: 'Sarabun', sans-serif; background: var(--sand-light); color: var(--text); outline: none; transition: border .2s; }
+  .field input:focus { border-color: var(--primary); background: white; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .terms-box { background: var(--sand-light); border-radius: 10px; padding: 14px 16px; max-height: 160px; overflow-y: auto; font-size: 13px; line-height: 1.8; color: var(--text-muted); border: 1px solid var(--border); margin-bottom: 16px; }
+  .terms-box p { margin-bottom: 6px; }
+  .checkbox-row { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+  .checkbox-row input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--primary); flex-shrink: 0; margin-top: 2px; }
+  .checkbox-row span { font-size: 14px; line-height: 1.5; }
+
+  .upload-area { border: 1.5px dashed var(--sand); border-radius: 12px; padding: 28px 20px; text-align: center; cursor: pointer; transition: all .2s; background: var(--sand-light); position: relative; }
+  .upload-area:hover { border-color: var(--primary); background: var(--primary-light); }
+  .upload-area.has-file { border-color: var(--primary); border-style: solid; background: var(--primary-light); }
+  .upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-text strong { display: block; font-size: 14px; color: var(--primary); margin-bottom: 4px; }
+  .upload-text span { font-size: 12px; color: var(--text-muted); }
+  .file-preview { display: none; align-items: center; gap: 8px; background: var(--primary-light); border-radius: 8px; padding: 10px 14px; margin-top: 10px; font-size: 13px; color: var(--primary); }
+  .file-preview.show { display: flex; }
+
+  .amount-box { background: var(--primary); border-radius: 12px; padding: 22px; color: white; margin-bottom: 16px; position: relative; overflow: hidden; }
+  .amount-box::before { content: ''; position: absolute; top: -20px; right: -20px; width: 120px; height: 120px; border-radius: 50%; background: rgba(222,194,165,0.1); }
+  .amount-label { font-size: 10px; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+  .amount-number { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 500; line-height: 1; }
+  .amount-unit { font-size: 14px; opacity: 0.7; margin-left: 6px; }
+  .amount-detail { display: flex; gap: 20px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px; opacity: 0.65; }
+  .amount-detail span { display: flex; flex-direction: column; gap: 2px; }
+  .amount-detail strong { font-size: 13px; opacity: 1; color: var(--sand); }
+
+  .alert { background: var(--sand-light); border: 1px solid var(--sand); border-radius: 10px; padding: 12px 16px; font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.7; }
+
+  .btn-group { display: flex; gap: 10px; }
+  .btn { flex: 1; padding: 15px; border: none; border-radius: 10px; font-family: 'Sarabun', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: 0.5px; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover:not(:disabled) { background: #4e5133; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(101,104,67,0.3); }
+  .btn-primary:disabled { background: #C5C0B5; cursor: not-allowed; }
+  .btn-back { background: white; color: var(--text-muted); border: 1px solid var(--border); flex: 0 0 auto; padding: 15px 20px; }
+  .btn-back:hover { border-color: var(--primary); color: var(--primary); }
+
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite; display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .success-wrap { text-align: center; padding: 32px 20px; }
+  .success-icon { width: 70px; height: 70px; border-radius: 50%; background: var(--primary-light); color: var(--primary); font-size: 30px; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; }
+  .success-wrap h2 { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 500; margin-bottom: 8px; }
+  .success-wrap p { color: var(--text-muted); font-size: 14px; line-height: 1.7; }
+  .info-row { display: flex; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .info-row:last-child { border-bottom: none; }
+  .info-row .label { color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .info-row .value { font-weight: 600; }
+  .earth { color: var(--accent); }
+  .wood { color: var(--primary); }
+
+  .error-msg { background: #FDF0EE; border: 1px solid #e8c0b0; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: var(--accent); margin-bottom: 16px; display: none; }
+  .error-msg.show { display: block; }
+
+  .invalid-box { text-align: center; padding: 60px 20px; }
+  .invalid-box .icon { font-size: 48px; margin-bottom: 16px; }
+  .invalid-box h2 { font-family: 'Cormorant Garamond', serif; font-size: 24px; margin-bottom: 8px; }
+  .invalid-box p { font-size: 14px; color: var(--text-muted); }
+
+  /* Divider ornament */
+  .ornament { text-align: center; color: var(--sand); font-size: 18px; margin: 4px 0 16px; letter-spacing: 6px; opacity: 0.6; }
+</style>
+</head>
+<body>
+
+<script>
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxRj8dxhdivOGyPSrD_nMdAIhHLb0od5wCoM3uz2AauvjQ9hGLKVCBiTLPz9d4f_8Qv/exec';
+  const params = new URLSearchParams(window.location.search);
+  const BOOKING = {
+    id: params.get('id')||'', name: params.get('name')||'',
+    room: params.get('room')||'', checkin: params.get('checkin')||'',
+    checkout: params.get('checkout')||'',
+    total: parseInt(params.get('total')||0),
+    deposit: parseInt(params.get('deposit')||0),
+    amount: parseInt(params.get('amount')||0),
+    bankName: params.get('bank')||'', bankAccount: params.get('acc')||'',
+    bankOwner: params.get('owner')||'',
+  };
+  const isValid = BOOKING.id && BOOKING.amount > 0;
+</script>
+
+<div class="header">
+  <div class="header-logo"><span>Humble</span><span>House.</span></div>
+  <div class="header-sub">Self Check-in</div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-steps">
+    <div class="step-dot active" id="dot1"><div class="step-num">1</div><div class="step-label">เงื่อนไข</div></div>
+    <div class="step-dot" id="dot2"><div class="step-num">2</div><div class="step-label">ข้อมูล</div></div>
+    <div class="step-dot" id="dot3"><div class="step-num">3</div><div class="step-label">ยอด+สลิป</div></div>
+    <div class="step-dot" id="dot4"><div class="step-num">4</div><div class="step-label">รอยืนยัน</div></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="page active" id="page-invalid">
+    <div class="card"><div class="invalid-box">
+      <div class="icon">⚠️</div>
+      <h2>Link ไม่ถูกต้อง</h2>
+      <p>กรุณาติดต่อเจ้าหน้าที่เพื่อขอ Link Check-in ใหม่</p>
+    </div></div>
+  </div>
+
+  <!-- PAGE 1: Terms -->
+  <div class="page" id="page1">
+    <div class="card">
+      <div class="card-title"><div class="step-badge">1</div>เงื่อนไขการเข้าพัก</div>
+      <div class="ornament">· · ·</div>
+      <div class="card-sub">กรุณาอ่านและยอมรับเงื่อนไขก่อนดำเนินการต่อ</div>
+      <div class="terms-box">
+        <p>1. เวลาเช็คอิน 14:00 น. / เช็คเอาต์ 12:00 น.</p>
+        <p>2. ห้ามสูบบุหรี่ภายในห้องพัก ค่าปรับ 2,000 บาท</p>
+        <p>3. ห้ามนำสัตว์เลี้ยงเข้าพัก</p>
+        <p>4. ความเสียหายใดๆ ผู้เข้าพักต้องรับผิดชอบ</p>
+        <p>5. ห้ามส่งเสียงดังรบกวนผู้อื่นหลัง 22:00 น.</p>
+        <p>6. มัดจำไม่คืนหากยกเลิกภายใน 3 วันก่อนเข้าพัก</p>
+        <p>7. ที่พักสงวนสิทธิ์ปฏิเสธการเข้าพักหากไม่ปฏิบัติตามข้อตกลง</p>
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="terms-check" onchange="document.getElementById('btn1').disabled=!this.checked">
+        <span>ข้าพเจ้าได้อ่านและยอมรับเงื่อนไขทั้งหมดแล้ว</span>
+      </label>
+    </div>
+    <button class="btn btn-primary" id="btn1" disabled onclick="goTo(2)">ถัดไป →</button>
+  </div>
+
+  <!-- PAGE 2: Info -->
+  <div class="page" id="page2">
+    <div class="card">
+      <div class="card-title"><div class="step-badge">2</div>ข้อมูลผู้เข้าพัก</div>
+      <div class="ornament">· · ·</div>
+      <div class="card-sub">กรุณายืนยันข้อมูลการจอง</div>
+      <div class="field"><label>ชื่อ-นามสกุล</label>
+        <input type="text" id="input-name" placeholder="กรอกชื่อ-นามสกุลจริง" oninput="checkPage2()">
+      </div>
+      <div class="field-row">
+        <div class="field"><label>วันเช็คอิน</label><input type="date" id="input-checkin" oninput="checkPage2()"></div>
+        <div class="field"><label>วันเช็คเอาต์</label><input type="date" id="input-checkout" oninput="checkPage2()"></div>
+      </div>
+      <div class="field"><label>เบอร์โทรศัพท์</label>
+        <input type="tel" id="input-phone" placeholder="08X-XXX-XXXX" oninput="checkPage2()">
+      </div>
+
+      <div style="margin:20px 0 10px;font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:.8px;text-transform:uppercase;">แนบบัตรประชาชน</div>
+      <div class="upload-area" id="id-area">
+        <input type="file" id="id-file" accept="image/*" onchange="handleIdFile()">
+        <div class="upload-icon">🪪</div>
+        <div class="upload-text">
+          <strong>แตะเพื่อถ่ายภาพ / อัปโหลด</strong>
+          <span>ถ่ายให้เห็นข้อมูลชัดเจน</span>
+        </div>
+      </div>
+      <div class="file-preview" id="id-preview">✅ <span id="id-fname"></span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-back" onclick="goTo(1)">← ย้อนกลับ</button>
+      <button class="btn btn-primary" id="btn2" disabled onclick="goTo(3)">ถัดไป →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 3: Amount + Slip -->
+  <div class="page" id="page3">
+    <div class="card">
+      <div class="card-title"><div class="step-badge">3</div>ยอดชำระและสลิป</div>
+      <div class="ornament">· · ·</div>
+      <div class="card-sub">โอนเงินตามยอดด้านล่าง แล้วแนบสลิปการโอน</div>
+      <div class="amount-box">
+        <div class="amount-label">ยอดที่ต้องชำระ</div>
+        <div><span class="amount-number" id="display-amount"></span><span class="amount-unit">บาท</span></div>
+        <div class="amount-detail">
+          <span>ยอดรวม<strong id="display-total"></strong></span>
+          <span>มัดจำแล้ว<strong id="display-deposit"></strong></span>
+          <span>คงเหลือ<strong id="display-remain"></strong></span>
+        </div>
+      </div>
+      <div class="alert" id="bank-info"></div>
+      <div style="margin-bottom:10px;font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;">แนบสลิปการโอนเงิน</div>
+      <div class="upload-area" id="slip-area">
+        <input type="file" id="slip-file" accept="image/*" onchange="handleFile()">
+        <div class="upload-icon">🧾</div>
+        <div class="upload-text">
+          <strong>แตะเพื่อถ่ายสลิป / อัปโหลด</strong>
+          <span>รองรับไฟล์ JPG, PNG</span>
+        </div>
+      </div>
+      <div class="file-preview" id="slip-preview">✅ <span id="slip-fname"></span></div>
+      <div class="error-msg" id="error-msg"></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-back" onclick="goTo(2)">← ย้อนกลับ</button>
+      <button class="btn btn-primary" id="btn3" disabled onclick="submitForm()">
+        <span id="btn3-text">ส่งข้อมูล ✓</span>
+        <div class="spinner" id="spinner"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- PAGE 4: Success -->
+  <div class="page" id="page4">
+    <div class="card">
+      <div class="success-wrap">
+        <div class="success-icon">⏳</div>
+        <h2>ส่งข้อมูลสำเร็จ</h2>
+        <div class="ornament">· · ·</div>
+        <p style="margin-bottom:24px">ทีมงานกำลังตรวจสอบเอกสาร<br>จะแจ้งรหัสเข้าพักให้ทาง <strong>Line</strong> ภายใน 30 นาที</p>
+        <div style="text-align:left">
+          <div class="info-row"><span class="label">รหัสการจอง</span><span class="value wood" id="confirm-id"></span></div>
+          <div class="info-row"><span class="label">ชื่อผู้เข้าพัก</span><span class="value" id="confirm-name"></span></div>
+          <div class="info-row"><span class="label">วันเช็คอิน</span><span class="value" id="confirm-checkin"></span></div>
+          <div class="info-row"><span class="label">วันเช็คเอาต์</span><span class="value" id="confirm-checkout"></span></div>
+          <div class="info-row"><span class="label">สถานะ</span><span class="value earth">กำลังตรวจสอบ</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let slipBase64=null, slipName=null;
+  let idBase64=null, idName=null;
+  window.onload=()=>{
+    if(!isValid){document.getElementById('page-invalid').style.display='block';return;}
+    document.getElementById('page-invalid').style.display='none';
+    document.getElementById('page1').classList.add('active');
+    document.getElementById('display-amount').textContent=BOOKING.amount.toLocaleString();
+    document.getElementById('display-total').textContent=BOOKING.total.toLocaleString()+' ฿';
+    document.getElementById('display-deposit').textContent=BOOKING.deposit.toLocaleString()+' ฿';
+    document.getElementById('display-remain').textContent=BOOKING.amount.toLocaleString()+' ฿';
+    document.getElementById('bank-info').innerHTML=
+      `💳 โอนมาที่ <strong>${BOOKING.bankName}</strong> เลขบัญชี <strong>${BOOKING.bankAccount}</strong><br>ชื่อบัญชี: ${BOOKING.bankOwner}`;
+    if(BOOKING.name)document.getElementById('input-name').value=BOOKING.name;
+    if(BOOKING.checkin)document.getElementById('input-checkin').value=BOOKING.checkin;
+    if(BOOKING.checkout)document.getElementById('input-checkout').value=BOOKING.checkout;
+    checkPage2();
+  };
+  function goTo(step){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page'+step).classList.add('active');
+    for(let i=1;i<=4;i++){
+      const dot=document.getElementById('dot'+i);
+      if(!dot)continue;
+      dot.classList.remove('active','done');
+      if(i<step)dot.classList.add('done');
+      if(i===step)dot.classList.add('active');
+    }
+    window.scrollTo(0,0);
+  }
+  function handleIdFile(){
+    const file=document.getElementById('id-file').files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      idBase64=e.target.result;idName=file.name;
+      document.getElementById('id-area').classList.add('has-file');
+      document.getElementById('id-preview').classList.add('show');
+      document.getElementById('id-fname').textContent=file.name;
+      checkPage2();
+    };
+    reader.readAsDataURL(file);
+  }
+  function handleFile(){
+    const file=document.getElementById('slip-file').files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      slipBase64=e.target.result;slipName=file.name;
+      document.getElementById('slip-area').classList.add('has-file');
+      document.getElementById('slip-preview').classList.add('show');
+      document.getElementById('slip-fname').textContent=file.name;
+      document.getElementById('btn3').disabled=false;
+    };
+    reader.readAsDataURL(file);
+  }
+  function checkPage2(){
+    const ok=document.getElementById('input-name').value.trim()&&
+              document.getElementById('input-checkin').value&&
+              document.getElementById('input-checkout').value&&
+              document.getElementById('input-phone').value.trim()&&
+              idBase64;
+    document.getElementById('btn2').disabled=!ok;
+  }
+  async function submitForm(){
+    const btn=document.getElementById('btn3');
+    const spinner=document.getElementById('spinner');
+    const btnText=document.getElementById('btn3-text');
+    const errMsg=document.getElementById('error-msg');
+    btn.disabled=true;spinner.style.display='block';
+    btnText.textContent='กำลังส่งข้อมูล...';errMsg.classList.remove('show');
+    const payload={
+      bookingId:BOOKING.id,
+      name:document.getElementById('input-name').value.trim(),
+      phone:document.getElementById('input-phone').value.trim(),
+      checkin:document.getElementById('input-checkin').value,
+      checkout:document.getElementById('input-checkout').value,
+      room:BOOKING.room,amount:BOOKING.amount,slipBase64,slipName,idCardBase64:idBase64,idCardName:idName
+    };
+    try{
+      const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
+      const result=await res.json();
+      if(result.success){
+        document.getElementById('confirm-id').textContent='#'+result.bookingId;
+        document.getElementById('confirm-name').textContent=payload.name;
+        document.getElementById('confirm-checkin').textContent=payload.checkin;
+        document.getElementById('confirm-checkout').textContent=payload.checkout;
+        goTo(4);
+      }else throw new Error(result.error);
+    }catch(err){
+      errMsg.textContent='❌ '+(err.message||'เกิดข้อผิดพลาด กรุณาลองใหม่');
+      errMsg.classList.add('show');
+      btn.disabled=false;spinner.style.display='none';
+      btnText.textContent='ส่งข้อมูล ✓';
+    }
+  }
+</script>
+</body>
+</html>
