@@ -132,7 +132,7 @@
     bankName: params.get('bank')||'', bankAccount: params.get('acc')||'',
     bankOwner: params.get('owner')||'',
   };
-  const isValid = BOOKING.id && BOOKING.amount > 0;
+  const isValid = BOOKING.id && BOOKING.amount >= 0 && params.has('amount');
 </script>
 
 <div class="header">
@@ -215,7 +215,7 @@
       </div>
       <div class="field-row">
         <div class="field"><label>วันเช็คอิน</label><input type="date" id="input-checkin" oninput="checkPage2()"></div>
-        <div class="field"><label>วันเช็คเอาท์</label><input type="date" id="input-checkout" oninput="checkPage2()"></div>
+        <div class="field"><label>วันเช็คเอาต์</label><input type="date" id="input-checkout" oninput="checkPage2()"></div>
       </div>
       <div class="field"><label>เบอร์โทรศัพท์</label>
         <input type="tel" id="input-phone" placeholder="08X-XXX-XXXX" oninput="checkPage2()">
@@ -243,27 +243,37 @@
     <div class="card">
       <div class="card-title"><div class="step-badge">3</div>ยอดชำระและสลิป</div>
       <div class="ornament">· · ·</div>
-      <div class="card-sub">โอนเงินตามยอดด้านล่าง แล้วแนบสลิปการโอน</div>
-      <div class="amount-box">
-        <div class="amount-label">ยอดที่ต้องชำระ</div>
-        <div><span class="amount-number" id="display-amount"></span><span class="amount-unit">บาท</span></div>
-        <div class="amount-detail">
-          <span>ยอดรวม<strong id="display-total"></strong></span>
-          <span>มัดจำแล้ว<strong id="display-deposit"></strong></span>
-          <span>คงเหลือ<strong id="display-remain"></strong></span>
-        </div>
+      <div class="card-sub" id="page3-sub">โอนเงินตามยอดด้านล่าง แล้วแนบสลิปการโอน</div>
+
+      <div id="paid-full-box" style="display:none;background:var(--primary-light);border:1px solid #c8caa0;border-radius:12px;padding:20px;text-align:center;margin-bottom:16px;">
+        <div style="font-size:32px;margin-bottom:8px;">✅</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--primary);font-weight:500;">ชำระเงินครบถ้วนแล้ว</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">ไม่ต้องแนบสลิปการโอนเงิน</div>
       </div>
-      <div class="alert" id="bank-info"></div>
-      <div style="margin-bottom:10px;font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;">แนบสลิปการโอนเงิน</div>
-      <div class="upload-area" id="slip-area">
-        <input type="file" id="slip-file" accept="image/*" onchange="handleFile()">
-        <div class="upload-icon">🧾</div>
-        <div class="upload-text">
-          <strong>แตะเพื่อถ่ายสลิป / อัปโหลด</strong>
-          <span>รองรับไฟล์ JPG, PNG</span>
+
+      <div id="amount-section">
+        <div class="amount-box">
+          <div class="amount-label">ยอดที่ต้องชำระ</div>
+          <div><span class="amount-number" id="display-amount"></span><span class="amount-unit">บาท</span></div>
+          <div class="amount-detail">
+            <span>ยอดรวม<strong id="display-total"></strong></span>
+            <span>มัดจำแล้ว<strong id="display-deposit"></strong></span>
+            <span>คงเหลือ<strong id="display-remain"></strong></span>
+          </div>
         </div>
+        <div class="alert" id="bank-info"></div>
+        <div style="margin-bottom:10px;font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;">แนบสลิปการโอนเงิน</div>
+        <div class="upload-area" id="slip-area">
+          <input type="file" id="slip-file" accept="image/*" onchange="handleFile()">
+          <div class="upload-icon">🧾</div>
+          <div class="upload-text">
+            <strong>แตะเพื่อถ่ายสลิป / อัปโหลด</strong>
+            <span>รองรับไฟล์ JPG, PNG</span>
+          </div>
+        </div>
+        <div class="file-preview" id="slip-preview">✅ <span id="slip-fname"></span></div>
       </div>
-      <div class="file-preview" id="slip-preview">✅ <span id="slip-fname"></span></div>
+
       <div class="error-msg" id="error-msg"></div>
     </div>
     <div class="btn-group">
@@ -318,12 +328,22 @@
 
     document.getElementById('page-invalid').style.display='none';
     document.getElementById('page1').classList.add('active');
-    document.getElementById('display-amount').textContent=BOOKING.amount.toLocaleString();
-    document.getElementById('display-total').textContent=BOOKING.total.toLocaleString()+' ฿';
-    document.getElementById('display-deposit').textContent=BOOKING.deposit.toLocaleString()+' ฿';
-    document.getElementById('display-remain').textContent=BOOKING.amount.toLocaleString()+' ฿';
-    document.getElementById('bank-info').innerHTML=
-      `💳 โอนมาที่ <strong>${BOOKING.bankName}</strong> เลขบัญชี <strong>${BOOKING.bankAccount}</strong><br>ชื่อบัญชี: ${BOOKING.bankOwner}`;
+
+    if(BOOKING.amount === 0){
+      // ชำระครบแล้ว ไม่ต้องแนบสลิป
+      document.getElementById('page3-sub').textContent='ยืนยันข้อมูลก่อนส่ง';
+      document.getElementById('paid-full-box').style.display='block';
+      document.getElementById('amount-section').style.display='none';
+      document.getElementById('btn3').disabled=false;
+    } else {
+      document.getElementById('display-amount').textContent=BOOKING.amount.toLocaleString();
+      document.getElementById('display-total').textContent=BOOKING.total.toLocaleString()+' ฿';
+      document.getElementById('display-deposit').textContent=BOOKING.deposit.toLocaleString()+' ฿';
+      document.getElementById('display-remain').textContent=BOOKING.amount.toLocaleString()+' ฿';
+      document.getElementById('bank-info').innerHTML=
+        `💳 โอนมาที่ <strong>${BOOKING.bankName}</strong> เลขบัญชี <strong>${BOOKING.bankAccount}</strong><br>ชื่อบัญชี: ${BOOKING.bankOwner}`;
+    }
+
     if(BOOKING.name)document.getElementById('input-name').value=BOOKING.name;
     if(BOOKING.checkin)document.getElementById('input-checkin').value=BOOKING.checkin;
     if(BOOKING.checkout)document.getElementById('input-checkout').value=BOOKING.checkout;
