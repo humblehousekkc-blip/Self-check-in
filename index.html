@@ -151,7 +151,13 @@
 
 <div class="container">
 
-  <div class="page active" id="page-invalid">
+  <!-- Loading screen -->
+  <div id="page-loading" style="text-align:center;padding:80px 20px;">
+    <div style="width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px;"></div>
+    <div style="font-size:13px;color:var(--text-muted);">กำลังโหลด...</div>
+  </div>
+
+  <div class="page active" id="page-invalid" style="display:none;">
     <div class="card"><div class="invalid-box">
       <div class="icon">⚠️</div>
       <h2>Link ไม่ถูกต้อง</h2>
@@ -310,12 +316,17 @@
   let slipBase64=null, slipName=null;
   let idBase64=null, idName=null;
   window.onload=async()=>{
-    if(!isValid){document.getElementById('page-invalid').style.display='block';return;}
+    if(!isValid){
+      document.getElementById('page-loading').style.display='none';
+      document.getElementById('page-invalid').style.display='block';
+      return;
+    }
 
     // เช็คสถานะ Link ก่อนเปิดฟอร์ม
     try {
       const res = await fetch(SCRIPT_URL + '?bookingId=' + BOOKING.id);
       const data = await res.json();
+      document.getElementById('page-loading').style.display='none';
       if(data.success && data.status === 'อนุมัติแล้ว') {
         document.getElementById('page-used').style.display='block';
         return;
@@ -324,7 +335,9 @@
         document.getElementById('page-rejected').style.display='block';
         return;
       }
-    } catch(e) {}
+    } catch(e) {
+      document.getElementById('page-loading').style.display='none';
+    }
 
     document.getElementById('page-invalid').style.display='none';
     document.getElementById('page1').classList.add('active');
